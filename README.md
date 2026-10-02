@@ -84,7 +84,7 @@ A longer explanation of each one, with the questions an examiner is likely to as
 
 - **The search animation is real.** Each search records every step it takes. The map replays those steps, so you can drag the slider backwards and see the exact queue or heap at that moment.
 - **The routing code never touches the page.** [`src/planner.js`](src/planner.js) has no browser code in it, so the same file runs on the site and in the tests.
-- **67 automated tests** cover every structure and feature. One test checks all 406 pairs of places in all three route types. They run on every push with GitHub Actions.
+- **67 automated tests** cover every structure and feature. One test checks all 406 pairs of places in all three route types. They run on every push with GitHub Actions, and the live site is only updated when they pass.
 - **No dependencies and no build step.** Plain HTML, CSS and JavaScript modules. The fonts are bundled, so the site works without an internet connection.
 - **Accessible:** every place on the map can be reached and opened from the keyboard, focus is always visible, and animations are skipped for people who ask their device to reduce motion.
 
@@ -198,14 +198,15 @@ node --test
 
 ## Put it online with GitHub Pages
 
-GitHub hosts the site for free, straight from this repository.
+GitHub hosts the site for free, straight from this repository. It is served from the `gh-pages` branch, and [the workflow](.github/workflows/tests.yml) copies `main` onto that branch every time the tests pass. So publishing a change is just:
 
-1. Open the repository on GitHub and go to **Settings → Pages**.
-2. Under **Build and deployment**, set **Source** to **Deploy from a branch**.
-3. Choose the **main** branch and the **/ (root)** folder, then **Save**.
-4. Wait about a minute and refresh. The page shows your link: `https://YOUR-USERNAME.github.io/Smart-Travel-and-Route-Planner/`.
+```bash
+git push
+```
 
-Every push to `main` republishes the site.
+About a minute later the live site shows it. If the tests fail, the site stays as it was.
+
+To publish your own copy, fork this repository and push once to `main`. Then open **Settings → Pages**, set **Source** to **Deploy from a branch**, choose **gh-pages** and **/ (root)**, and save. Your link appears on that page: `https://YOUR-USERNAME.github.io/Smart-Travel-and-Route-Planner/`.
 
 ## Use your own campus
 

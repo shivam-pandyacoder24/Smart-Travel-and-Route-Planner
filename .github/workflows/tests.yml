@@ -1,4 +1,4 @@
-name: Tests
+name: Tests and publish
 
 on:
   push:
@@ -15,3 +15,18 @@ jobs:
           node-version: "22"
       - name: Run tests
         run: node --test
+
+  publish:
+    # GitHub Pages serves the gh-pages branch. Once the tests pass on main,
+    # this copies main onto gh-pages, so the live site only ever shows tested code.
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Copy main to gh-pages
+        run: git push --force origin HEAD:gh-pages
