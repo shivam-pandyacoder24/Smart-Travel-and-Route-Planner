@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Travel and Route Planner</title>
+  <meta name="description" content="Find walking routes across a campus. Built on hand-written data structures: graph, hash table, trees, linked list, stack and queue.">
+  <meta name="color-scheme" content="light dark">
+  <meta property="og:title" content="Smart Travel and Route Planner">
+  <meta property="og:description" content="Find walking routes across a campus and watch the graph search happen. Built on hand-written data structures.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://shivam-pandyacoder24.github.io/Smart-Travel-and-Route-Planner/docs/social-preview.png">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/Barlow-Regular.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/style.css">
+  <script>
+    // Apply the saved theme before the page paints, so there is no flash.
+    try {
+      var savedTheme = localStorage.getItem('route-planner-theme');
+      if (savedTheme === 'light' || savedTheme === 'dark') document.documentElement.dataset.theme = savedTheme;
+    } catch (error) { /* storage is unavailable: follow the system setting */ }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#planner">Skip to the route planner</a>
+
+  <header class="topbar">
+    <a class="brand" href="#planner">
+      <svg class="brand-mark" viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+        <rect width="32" height="32" rx="7" fill="var(--sign)"/>
+        <path d="M9 23V14a4 4 0 0 1 4-4h10" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M19.5 6.5 23 10l-3.5 3.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="9" cy="23.5" r="3" fill="var(--marker)" stroke="#fff" stroke-width="1.6"/>
+      </svg>
+      <h1 class="brand-name">Smart Travel and Route Planner</h1>
+    </a>
+    <nav class="topnav" aria-label="Page sections">
+      <a href="#planner">Planner</a>
+      <a href="#structures">Data structures</a>
+      <a href="https://github.com/shivam-pandyacoder24/Smart-Travel-and-Route-Planner">Source code</a>
+    </nav>
+    <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to dark map">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path class="theme-moon" d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z" fill="currentColor"/><g class="theme-sun" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></g></svg>
+    </button>
+  </header>
+
+  <main>
+    <section class="planner" id="planner" aria-label="Route planner">
+      <div class="desk">
+        <div class="tabs" role="tablist" aria-label="Planner sections">
+          <button class="tab" role="tab" id="tab-route" aria-controls="panel-route" aria-selected="true" type="button">Route</button>
+          <button class="tab" role="tab" id="tab-places" aria-controls="panel-places" aria-selected="false" tabindex="-1" type="button">Places</button>
+          <button class="tab" role="tab" id="tab-trip" aria-controls="panel-trip" aria-selected="false" tabindex="-1" type="button">Trip <span class="tab-count" id="trip-count" hidden></span></button>
+        </div>
+
+        <div class="panel" role="tabpanel" id="panel-route" aria-labelledby="tab-route">
+          <form class="route-form" id="route-form" autocomplete="off">
+            <div class="ends">
+              <div class="field">
+                <label for="from-input"><span class="end-letter end-a" aria-hidden="true">A</span>From</label>
+                <div class="combo" id="from-combo"></div>
+              </div>
+              <button class="icon-button swap" id="swap" type="button" aria-label="Swap From and To">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M8 4v14m0 0-3.5-3.5M8 18l3.5-3.5M16 20V6m0 0-3.5 3.5M16 6l3.5 3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="field">
+                <label for="to-input"><span class="end-letter end-b" aria-hidden="true">B</span>To</label>
+                <div class="combo" id="to-combo"></div>
+              </div>
+            </div>
+
+            <fieldset class="modes">
+              <legend>Route type</legend>
+              <div class="segmented" id="modes"></div>
+              <p class="hint" id="mode-hint"></p>
+            </fieldset>
+
+            <p class="form-error" id="route-error" role="alert" hidden></p>
+
+            <div class="form-actions">
+              <button class="button primary" type="submit">Find route</button>
+              <div class="history-buttons">
+                <button class="button quiet" id="history-back" type="button" disabled>Back</button>
+                <button class="button quiet" id="history-forward" type="button" disabled>Forward</button>
+              </div>
+            </div>
+          </form>
+
+          <div id="route-result" aria-live="polite"></div>
+        </div>
+
+        <div class="panel" role="tabpanel" id="panel-places" aria-labelledby="tab-places" hidden>
+          <div class="field">
+            <label for="place-search">Search places</label>
+            <input id="place-search" type="search" placeholder="Name, ID or what you need, like coffee" autocomplete="off">
+          </div>
+          <div class="field">
+            <span class="label" id="category-label">Category</span>
+            <div class="category-tree" id="category-tree" role="group" aria-labelledby="category-label"></div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="sort-by">Sort by</label>
+              <select id="sort-by">
+                <option value="name">Name, A to Z</option>
+                <option value="distance">Walking distance</option>
+                <option value="category">Category</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="sort-algorithm">Sort with</label>
+              <select id="sort-algorithm">
+                <option value="merge">Merge sort</option>
+                <option value="quick">Quick sort</option>
+                <option value="insertion">Insertion sort</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="within">Within</label>
+              <select id="within">
+                <option value="0">Any distance</option>
+                <option value="160">2 minute walk</option>
+                <option value="400">5 minute walk</option>
+                <option value="800">10 minute walk</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="origin">Measured from</label>
+              <select id="origin"></select>
+            </div>
+          </div>
+          <p class="work-line" id="places-work" aria-live="polite"></p>
+          <ul class="place-list" id="place-list"></ul>
+        </div>
+
+        <div class="panel" role="tabpanel" id="panel-trip" aria-labelledby="tab-trip" hidden>
+          <p class="panel-intro">Save the places you need to visit, in order. The planner routes from each stop to the next.</p>
+          <ol class="stop-list" id="stop-list"></ol>
+          <div class="add-stop">
+            <div class="field">
+              <label for="stop-select">Add a stop</label>
+              <select id="stop-select"></select>
+            </div>
+            <button class="button" id="add-stop" type="button">Add stop</button>
+          </div>
+          <div class="trip-actions">
+            <button class="button primary" id="plan-trip" type="button">Plan trip</button>
+            <button class="button quiet" id="shorten-trip" type="button">Shorten trip</button>
+            <button class="button quiet" id="reverse-trip" type="button">Reverse</button>
+            <button class="button quiet" id="clear-trip" type="button">Clear</button>
+          </div>
+          <div id="trip-result" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="sheet">
+        <div class="sheet-head">
+          <div class="sheet-title">
+            <h2>Lakeview Campus</h2>
+            <p>Walking map of a made-up college campus</p>
+          </div>
+          <div class="sheet-tools">
+            <button class="button quiet small" id="close-mode" type="button" aria-pressed="false">Close a path</button>
+            <div class="zoom" role="group" aria-label="Map zoom">
+              <button class="icon-button" id="zoom-out" type="button" aria-label="Zoom out"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 12h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+              <button class="icon-button" id="zoom-reset" type="button" aria-label="Show the whole map"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <button class="icon-button" id="zoom-in" type="button" aria-label="Zoom in"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 12h12M12 6v12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="closures" id="closures" hidden></div>
+
+        <div class="sheet-map" id="map-frame">
+          <svg id="map" role="group" aria-label="Campus map. Each place is a button."></svg>
+          <div class="place-card" id="place-card" role="dialog" aria-label="Place details" hidden></div>
+        </div>
+
+        <div class="explore" id="explore" hidden>
+          <div class="explore-controls">
+            <button class="icon-button" id="explore-play" type="button" aria-label="Pause the search animation"></button>
+            <button class="icon-button" id="explore-prev" type="button" aria-label="Previous step"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button class="icon-button" id="explore-next" type="button" aria-label="Next step"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <input id="explore-scrub" type="range" min="0" max="1" value="0" aria-label="Search step">
+            <label class="speed"><span>Speed</span>
+              <select id="explore-speed">
+                <option value="700">Slow</option>
+                <option value="300" selected>Normal</option>
+                <option value="110">Fast</option>
+              </select>
+            </label>
+          </div>
+          <div class="explore-line">
+            <p class="explore-status" id="explore-status"></p>
+            <ul class="key" aria-label="Search marks">
+              <li><span class="ring is-visited" aria-hidden="true"></span>Visited</li>
+              <li><span class="ring is-waiting" aria-hidden="true"></span>Waiting</li>
+            </ul>
+          </div>
+          <div class="frontier">
+            <span class="frontier-label" id="frontier-label"></span>
+            <span class="frontier-chips" id="frontier-chips"></span>
+          </div>
+        </div>
+
+        <div class="sheet-foot">
+          <ul class="legend" id="legend" aria-label="Map key"></ul>
+          <div class="scale" aria-label="Scale: the bar is 100 metres long">
+            <span class="scale-bar" id="scale-bar"></span><span>100 m</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="structures" id="structures" aria-labelledby="structures-title">
+      <div class="structures-intro">
+        <h2 id="structures-title">Inside the planner</h2>
+        <p>Every feature above runs on a data structure written by hand for this project. Pick one to see what it holds right now. The views update as you use the planner.</p>
+      </div>
+      <div class="lab">
+        <div class="lab-list" id="lab-list" role="tablist" aria-label="Data structures" aria-orientation="vertical"></div>
+        <div class="lab-stage" id="lab-stage" role="tabpanel" tabindex="0"></div>
+      </div>
+      <div class="activity">
+        <h3>Activity</h3>
+        <p class="hint">What each structure did for your last few actions, newest first.</p>
+        <ol class="activity-list" id="activity-list"></ol>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Lakeview Campus is made up. Its places, paths and distances exist only for this project.</p>
+    <p>Built by Shivam A Pandya. <a href="https://github.com/shivam-pandyacoder24/Smart-Travel-and-Route-Planner">View the code on GitHub</a>.</p>
+  </footer>
+
+  <div class="load-problem" id="load-problem" hidden>
+    <h2>The planner could not start</h2>
+    <p id="load-problem-text"></p>
+  </div>
+  <noscript><div class="load-problem"><h2>JavaScript is switched off</h2><p>The route planner runs in your browser, so it needs JavaScript. Switch it on and reload the page.</p></div></noscript>
+
+  <script>
+    // Browsers block JavaScript modules on pages opened straight from a folder (file://).
+    if (location.protocol === 'file:') {
+      document.getElementById('load-problem').hidden = false;
+      document.getElementById('load-problem-text').innerHTML =
+        'This page was opened as a file, and browsers do not load its scripts that way. ' +
+        'In the project folder run <code>python -m http.server 8000</code> and then open ' +
+        '<code>http://localhost:8000</code>.';
+    }
+  </script>
+  <script type="module" src="src/ui/app.js"></script>
+</body>
+</html>
